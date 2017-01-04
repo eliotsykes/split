@@ -439,9 +439,9 @@ You may want to password protect that page, you can do so with `Rack::Auth::Basi
 Split::Dashboard.use Rack::Auth::Basic do |username, password|
   # Protect against timing attacks:
   # - Use & (do not use &&) so that it doesn't short circuit.
-  # - Use `variable_size_secure_compare` to stop length information leaking
-  ActiveSupport::SecurityUtils.variable_size_secure_compare(username, ENV["SPLIT_USERNAME"]) &
-    ActiveSupport::SecurityUtils.variable_size_secure_compare(password, ENV["SPLIT_PASSWORD"])
+  # - Use digests to stop length information leaking
+  ActiveSupport::SecurityUtils.secure_compare(::Digest::SHA256.hexdigest(username), ::Digest::SHA256.hexdigest(ENV["SPLIT_USERNAME"])) &
+    ActiveSupport::SecurityUtils.secure_compare(::Digest::SHA256.hexdigest(password), ::Digest::SHA256.hexdigest(ENV["SPLIT_PASSWORD"]))
 end
 
 # Apps without activesupport
@@ -449,7 +449,8 @@ Split::Dashboard.use Rack::Auth::Basic do |username, password|
   # Protect against timing attacks:
   # - Use & (do not use &&) so that it doesn't short circuit.
   # - Use digests to stop length information leaking
-  Rack::Utils.secure_compare(::Digest::SHA256.hexdigest(username), ::Digest::SHA256.hexdigest(ENV["SPLIT_USERNAME"])) &
+  Rack::Utils.secure_compare(::Digest::SHA256.
+  digest(username), ::Digest::SHA256.hexdigest(ENV["SPLIT_USERNAME"])) &
     Rack::Utils.secure_compare(::Digest::SHA256.hexdigest(password), ::Digest::SHA256.hexdigest(ENV["SPLIT_PASSWORD"]))
 end
 ```
